@@ -1,5 +1,6 @@
 package com.techilam.order_service.service;
 
+import com.techilam.order_service.dto.InventoryResponse;
 import com.techilam.order_service.dto.OrderItemDto;
 import com.techilam.order_service.dto.OrderRequest;
 import com.techilam.order_service.model.Order;
@@ -7,15 +8,20 @@ import com.techilam.order_service.model.OrderItem;
 import com.techilam.order_service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final WebClient webClient;
 
     public void placeOrder(OrderRequest orderRequest){
         Order order = new Order();
@@ -28,7 +34,24 @@ public class OrderService {
 
         order.setOrderItemList(orderItemList);
 
-        orderRepository.save(order);
+        List<String> skuCodes = order.getOrderItemList().stream().map(OrderItem::getSkuCode).toList();
+
+        // Call inventory service and place order if product is in
+        // stock
+        InventoryResponse[] inventoryResponses = webClient.get()
+                .uri("http://localhost:8082/api/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes).build())
+                .retrieve()
+                .bodyToMono(InventoryResponse[].class)
+                .block(); // get synchronous call
+        
+        boolean allProductsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::isInStock);
+
+        if (allProductsInStock) {
+            orderRepository.save(order);
+        } else {
+            throw new IllegalArgumentException("Products is out of stock");
+        }
     }
 
     private OrderItem mapToDto(OrderItemDto orderItemDto) {
