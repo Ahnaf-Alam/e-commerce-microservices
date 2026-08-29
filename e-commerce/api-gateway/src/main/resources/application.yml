@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            ## Product service route
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/api/product,/api/product/**
+            ## Order service route
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/order,/api/order/**
+            ## Discover server route
+            - id: discovery-server
+              uri: http://localhost:8761
+              predicates:
+                - Path=/eureka/web
+              filters:
+                - SetPath=/
+            ## Discover server static resource route
+            - id: discovery-server
+              uri: http://localhost:8761
+              predicates:
+                - Path=/eureka/**
+
+  application:
+    name: api-gateway
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address:true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: TRACE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health,info
