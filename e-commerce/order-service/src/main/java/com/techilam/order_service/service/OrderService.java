@@ -1,5 +1,6 @@
 package com.techilam.order_service.service;
 
+import com.techilam.order_service.client.InventoryClient;
 import com.techilam.order_service.dto.InventoryResponse;
 import com.techilam.order_service.dto.OrderItemDto;
 import com.techilam.order_service.dto.OrderRequest;
@@ -21,9 +22,11 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final WebClient.Builder webclientBuilder;
+//    private final WebClient.Builder webclientBuilder;
+    private final InventoryClient inventoryClient;
 
     public void placeOrder(OrderRequest orderRequest){
+
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
@@ -36,14 +39,19 @@ public class OrderService {
 
         List<String> skuCodes = order.getOrderItemList().stream().map(OrderItem::getSkuCode).toList();
 
-        // Call inventory service and place order if product is in
+        for(String skuCode : skuCodes) {
+
+        }
+
+
+        // Call inventory service and place order if product is in using spring reactive webclient
         // stock
-        InventoryResponse[] inventoryResponses = webclientBuilder.build().get()
-                .uri("http://inventory-service/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes).build())
-                .retrieve()
-                .bodyToMono(InventoryResponse[].class)
-                .block(); // get synchronous call
+//        InventoryResponse[] inventoryResponses = webclientBuilder.build().get()
+//                .uri("http://inventory-service/api/inventory",
+//                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes).build())
+//                .retrieve()
+//                .bodyToMono(InventoryResponse[].class)
+//                .block(); // get synchronous call
         
         boolean allProductsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::isInStock);
 
