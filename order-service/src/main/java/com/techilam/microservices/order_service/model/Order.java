@@ -1,4 +1,4 @@
-package com.techilam.order_service.model;
+package com.techilam.microservices.order_service.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -6,10 +6,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "t_orders")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -19,6 +19,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String orderNumber;
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<OrderItem> orderItemList;
+    private String skuCode;
+    private BigDecimal price;
+    private Integer quantity;
 }
